@@ -4,6 +4,9 @@ use IEEE.numeric_std.all;
 
 
 entity cordic 
+generic (
+	 rounding : boolean := true ;
+	)
 port (
 	x_in : in std_logic_vector (15 downto 0 ) ; -- arbitrary , technically we suppose some adc input so fixed point
 	y_in : in std_logic_vector ( 15 downto 0 );
@@ -83,9 +86,14 @@ FIRST_STAGE: process ( clk )
 begin
 	if rising_edge ( clk ) then
 		if angle_cordic (0) > 0 then
-			x_cordic ( 1 ) <= x_cordic ( 0 ) - (y_cordic(0) srl 1);
-			y_cordic ( 1 ) <= y_cordic ( 0 ) + ( x_cordic(0) srl 1 );
-			angle_cordic ( 1) <= angle_cordic ( 0 ) - angle_lut ( 0 )
+			if not rounding then
+				x_cordic ( 1 ) <= x_cordic ( 0 ) - (y_cordic(0) srl 1);
+				y_cordic ( 1 ) <= y_cordic ( 0 ) + ( x_cordic(0) srl 1 );
+				angle_cordic ( 1) <= angle_cordic ( 0 ) - angle_lut ( 0 );
+			else
+				x_cordic_round_reg <= x_cordic(0) + ( (21 downto 1 => '0') & x_cordic(0)(0));
+				y_cordic_round_reg <= y_cordic(0) + ( (21 downto 1 => '0') & y_cordic(0)(0));--add the rounding
+			end if;
 		else
 			x_cordic ( 1 ) <= x_cordic ( 0 ) + (y_cordic(0) srl 1);
 			y_cordic ( 1 ) <= y_cordic ( 0 ) - ( x_cordic(0) srl 1 );
